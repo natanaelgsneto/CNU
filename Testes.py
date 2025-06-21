@@ -6,7 +6,7 @@ import requests
 # ——————————————————————————
 API_KEY  = '9116e28fafc2e24b1b18ff417fea4dc8'
 TOKEN    = 'ATTA83b0dae8e025d5a203f37ffea918c4fd66f7d69d7ed03799d4ce84016f4a09833BB6908E'
-BOARD_ID = 'BpZvIIKw'
+BOARD_ID = '4Yps7asb'
 CSV_PATH = 'Cronograma_Estudos_CNU_2025_TI.csv'
 
 LISTAS = ['Planejamento', 'Execução', 'Revisão']
@@ -33,10 +33,6 @@ assuntos = [
     "3.1 Princípios e valores éticos do serviço público, seus direitos e deveres à luz do artigo 37 da Constituição Federal de 1988, e do Código de Ética Profissional do Servidor Público Civil do Poder Executivo Federal (Decreto nº 1.171/1994). ",
     
 
-    # EIXO TEMÁTICO 1 – GESTÃO GOVERNAMENTAL E GOVERNANÇA PÚBLICA
-    "1.1 Balanced Scorecard (BSC).",
-    "1.2 Matriz SWOT.",
-    # … e assim por diante, até cobrir todo o edital
 ]
 
 # ——————————————————————————

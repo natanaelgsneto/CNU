@@ -1,86 +1,81 @@
-import pandas as pd
 import requests
 
 # ——————————————————————————
-# CONFIGURAÇÃO
+# AUTENTICAÇÃO E CONFIGURAÇÃO
 # ——————————————————————————
-API_KEY  = '9116e28fafc2e24b1b18ff417fea4dc8'
-TOKEN    = 'ATTA83b0dae8e025d5a203f37ffea918c4fd66f7d69d7ed03799d4ce84016f4a09833BB6908E'
-BOARD_ID = 'BpZvIIKw'  # o código que você já instalou
+API_KEY = '9116e28fafc2e24b1b18ff417fea4dc8'
+TOKEN = 'ATTA83b0dae8e025d5a203f37ffea918c4fd66f7d69d7ed03799d4ce84016f4a09833BB6908E'
+BOARD_ID = 'CqZynf3b'  # NOVO QUADRO
+LIST_NAME = 'Planejamento'
+CARD_NAME = '📘 Eixo Temático 2 – POLÍTICAS PÚBLICAS (Checklist Estruturado)'
 
-CSV_PATH = 'C:\\Users\\Natanael\\PycharmProjects\\pythonProject\\Cronograma_Estudos_CNU_2025_TI.csv'  # certifique-se de estar no mesmo diretório
+# ——————————————————————————
+# CHECKLIST NO ESTILO DA IMAGEM
+# ——————————————————————————
+checklist_items = [
+    "1 O processo de elaboração de políticas.",
+    "1.1 O papel do Estado.",
+    "1.2 A burocracia e o Estado.",
+    "1.3 Poder, racionalidade e tomada de decisões.",
+    "1.4 O papel da burocracia e a discricionariedade no processo de formulação e implementação de políticas públicas.",
 
-# Nome exato das listas no seu quadro:
-LISTAS = ['Planejamento', 'Execução', 'Revisão']
+    "2 Implementação de políticas públicas: problemas, dilemas e desafios.",
+    "2.1 Arranjos institucionais para implementação de políticas públicas.",
+
+    "3 Avaliação de políticas públicas.",
+    "3.1 Principais componentes do processo de avaliação.",
+    "3.2 Custo-benefício, escala, efetividade, impacto das políticas públicas.",
+    "3.3 Principais diretrizes da formulação, implementação e avaliação de políticas públicas.",
+
+    "4 Políticas de ciência, tecnologia e inovação.",
+    "4.1 Marco Legal de CT&I (Lei nº 13.243/2016).",
+    "4.2 Política e Estratégia Nacional de CT&I.",
+    "4.3 Política Nacional de Inovação.",
+
+    "5 Políticas de Governo Digital.",
+    "5.1 Lei nº 14.129/2021 – Governo Digital.",
+    "5.2 Marco Civil da Internet – Lei nº 12.965/2014 e alterações.",
+    "5.3 Lei nº 13.460/2017 – Defesa do Usuário dos Serviços Públicos e alterações.",
+    "5.4 Estratégia Nacional de Governo Digital - Decreto 11.260/22 e alterações; Decreto nº 10.332/2020.",
+    "5.5 Estratégia Brasileira para a Transformação Digital (Decreto 9319/18 e suas alterações)."
+]
+
 
 # ——————————————————————————
 # FUNÇÕES AUXILIARES
 # ——————————————————————————
+def get_list_id(board_id, list_name):
+    url = f"https://api.trello.com/1/boards/{board_id}/lists"
+    params = {'key': API_KEY, 'token': TOKEN}
+    r = requests.get(url, params=params)
+    for lista in r.json():
+        if lista['name'].lower() == list_name.lower():
+            return lista['id']
+    raise Exception(f"Lista '{list_name}' não encontrada.")
 
-def trello_post(endpoint, params):
-    url = f"https://api.trello.com/1/{endpoint}"
-    params.update({'key': API_KEY, 'token': TOKEN})
+
+def create_card(list_id, name):
+    url = "https://api.trello.com/1/cards"
+    params = {'key': API_KEY, 'token': TOKEN, 'idList': list_id, 'name': name}
     r = requests.post(url, params=params)
-    r.raise_for_status()
-    return r.json()
+    return r.json()['id']
 
-def get_or_create_lists():
-    """Retorna um dict {nome_da_lista: id_da_lista}"""
-    ids = {}
-    for nome in LISTAS:
-        # cria a lista no final do board
-        data = trello_post(f"boards/{BOARD_ID}/lists", {'name': nome, 'pos': 'bottom'})
-        ids[nome] = data['id']
-        print(f"✔ Lista criada: {nome}")
-    return ids
 
-def get_or_create_labels(label_names):
-    """Retorna um dict {nome_da_label: id_da_label}"""
-    ids = {}
-    for nome in label_names:
-        data = trello_post(f"boards/{BOARD_ID}/labels", {'name': nome, 'color': 'null'})
-        ids[nome] = data['id']
-        print(f"✔ Etiqueta criada: {nome}")
-    return ids
+def add_checklist(card_id, checklist_name, items):
+    url = f"https://api.trello.com/1/cards/{card_id}/checklists"
+    params = {'key': API_KEY, 'token': TOKEN, 'name': checklist_name}
+    checklist = requests.post(url, params=params).json()
+    for item in items:
+        item_url = f"https://api.trello.com/1/checklists/{checklist['id']}/checkItems"
+        item_params = {'key': API_KEY, 'token': TOKEN, 'name': item, 'checked': 'false'}
+        requests.post(item_url, params=item_params)
 
-def create_card(name, list_id, label_ids):
-    params = {'name': name, 'idList': list_id}
-    if label_ids:
-        params['idLabels'] = ','.join(label_ids)
-    trello_post("cards", params)
-    print(f"  • Cartão criado: {name}")
 
 # ——————————————————————————
-# 1) Carrega o CSV e extrai os dias/blocos
+# EXECUÇÃO
 # ——————————————————————————
-df = pd.read_csv(CSV_PATH, sep=';', encoding='latin1')
+list_id = get_list_id(BOARD_ID, LIST_NAME)
+card_id = create_card(list_id, CARD_NAME)
+add_checklist(card_id, "Checklist", checklist_items)
 
-# Extrai todas as labels únicas nos blocos
-todas_labels = pd.concat([df['Bloco 1'], df['Bloco 2'], df['Bloco 3']])\
-                 .dropna().astype(str).str.strip().unique().tolist()
-
-# ——————————————————————————
-# 2) Cria listas e etiquetas no Trello
-# ——————————————————————————
-list_ids  = get_or_create_lists()
-label_ids = get_or_create_labels(todas_labels)
-
-# ——————————————————————————
-# 3) Cria um cartão para cada dia e cada bloco
-# ——————————————————————————
-for idx, row in df.iterrows():
-    dia = row['Dia']
-    for bloco_num in [1, 2, 3]:
-        materia = row[f'Bloco {bloco_num}'].strip()
-        # pula se estiver em branco ou for “— descanso —”
-        if materia == '' or 'descanso' in materia.lower():
-            continue
-
-        # título no formato “Bloco X - Dia: Matéria”
-        titulo = f"Bloco {bloco_num} - {dia}: {materia}"
-        lst_id = list_ids['Planejamento']  # todas vão para “Planejamento”; ajuste aqui se quiser outra lista
-        lbl_id = label_ids.get(materia)
-
-        create_card(titulo, lst_id, [lbl_id] if lbl_id else [])
-
-print("\nTudo pronto! ✔ Seus cartões foram importados no Trello.")
+print("✅ Card criado com checklist estruturado no novo quadro!")
